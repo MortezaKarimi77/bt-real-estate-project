@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<section id="showcase-inner" class="showcase-search text-white py-5">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-md-12">
+        <form action="{% url 'search' %}" method="get">
+          <!-- Form Row 1 -->
+          <div class="form-row">
+            <div class="col-md-4 mb-3">
+              <label class="sr-only">کلمات کلیدی</label>
+              <input type="text" name="keywords" class="form-control" placeholder="کلمات کلیدی (استخر، پارکینگ و...)"
+                value="{{ search_terms.keywords }}">
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="sr-only">شهر</label>
+              <input type="text" name="city" class="form-control" placeholder="شهر" value="{{ search_terms.city }}">
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="sr-only">استان</label>
+              <select name="state" class="form-control">
+                <option selected="true" disabled="disabled">استان‌ها</option>
+
+                {% for state in state_choices %}
+                <option value="{{ state }}" {% if state == search_terms.state %} selected {% endif %}>{{ state }}
+                </option>
+                {% endfor %}
+
+              </select>
+            </div>
+          </div>
+          <!-- Form Row 2 -->
+          <div class="form-row">
+            <div class="col-md-6 mb-3">
+              <label class="sr-only">تعداد اتاق خواب</label>
+              <select name="bedrooms" class="form-control">
+                <option selected="true" disabled="disabled">تعداد اتاق خواب</option>
+
+                {% for bedroom in bedroom_choices %}
+                <option value="{{ bedroom }}" {% if bedroom == search_terms.bedrooms %} selected {% endif %}>
+                  {{ bedroom }}</option>
+                {% endfor %}
+
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <select name="price" class="form-control">
+                <option selected="true" disabled="disabled">قیمت</option>
+                {% for key, value in price_choices.items %}
+                <option value="{{ key }}" {% if key == search_terms.price %} selected {% endif %}>{{ value }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-block mt-4" type="submit">جستجو</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Breadcrumb -->
+<section id="bc" class="mt-3">
+  <div class="container">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{% url 'home' %}">
+            <i class="fas fa-home"></i> خانه</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'listings' %}">لیست املاک</a>
+        </li>
+        <li class="breadcrumb-item active"> نتایج جستجو</li>
+      </ol>
+    </nav>
+  </div>
+</section>
+
+<!-- Listings -->
+<section id="listings" class="py-4">
+  <div class="container">
+    <div class="row">
+
+      <!-- Listings -->
+      {% if listings %}
+      {% for item in listings %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card listing-preview">
+          <img class="card-img-top" src="{{ item.main_photo.url }}" alt="">
+          <div class="card-img-overlay">
+            <h2>
+              <span class="badge badge-secondary text-white">${{ item.price|intcomma:False }}</span>
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="listing-heading text-center">
+              <h4 class="text-primary">{{ item.title }}</h4>
+              <p>
+                <i class="fas fa-map-marker text-secondary"></i> {{ item.state }}، {{ item.city }}، {{ item.address }}
+              </p>
+            </div>
+            <hr>
+            <div class="row py-2 text-secondary">
+              <div class="col-6">
+                <i class="fas fa-th-large"></i> مساحت: {{ item.square_meters }}
+              </div>
+              <div class="col-6">
+                <i class="fas fa-car"></i> پارکینگ: {{ item.garage }}
+              </div>
+            </div>
+            <div class="row py-2 text-secondary">
+              <div class="col-6">
+                <i class="fas fa-bed"></i> اتاق خواب: {{ item.bedrooms }}
+              </div>
+              <div class="col-6">
+                <i class="fas fa-bath"></i> حمام و دستشویی: {{ item.bathrooms }}
+              </div>
+            </div>
+            <hr>
+            <div class="row py-2 text-secondary">
+              <div class="col-12">
+                <i class="fas fa-user"></i> {{ item.realtor }}
+              </div>
+            </div>
+            <div class="row text-secondary pb-2">
+              <div class="col-6">
+                <i class="fas fa-clock"></i> {{ item.listed_date|naturalday }} | {{ item.listed_date|naturaltime }}
+              </div>
+            </div>
+            <hr>
+            <a href="{{ item.get_absolute_url }}?back={{ request.get_full_path }}"
+              class="btn btn-primary btn-block">اطلاعات بیشتر</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <p class="text-center">{{ message }}</p>
+      {% endif %}
+
+      <!-- Pagination -->
+      <div class="row">
+        <div class="col-md-12">
+          {% if other_pages %}
+
+          <ul class="pagination">
+
+            <li class="page-item {% if not prev_url %} disabled {% endif %}">
+              <a class="page-link" href="?page=1{{ query_string }}">شروع</a>
+            </li>
+            <li class="page-item {% if not prev_url %} disabled {% endif %}">
+              <a class="page-link" href="{{ prev_url }}">&laquo;</a>
+            </li>
+
+            {% for page_number in page_range %}
+            {% if page_number == current_page_number %}
+            <li class="page-item active">
+              <span class="page-link">{{ page_number }}</span>
+            </li>
+            {% elif page_number == ellipsis %}
+            <li class="page-item disabled">
+              <span class="page-link">{{ page_number }}</span>
+            </li>
+            {% else %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_number }}{{ query_string }}">{{ page_number }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            <li class="page-item {% if not next_url %} disabled {% endif %}">
+              <a class="page-link" href="{{ next_url }}">&raquo;</a>
+            </li>
+            <li class="page-item {% if not next_url %} disabled {% endif %}">
+              <a class="page-link" href="?page={{ last_page_number }}{{ query_string }}">پایان</a>
+            </li>
+          </ul>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+</section>
+{% endblock content %}
